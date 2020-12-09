@@ -13,7 +13,7 @@ For assistance:
 
 //global constants
 const maxDisplayItems = 9;
-const maxPage = (data.length / maxDisplayItems) + 1;
+const maxPage = Math.ceil(data.length / maxDisplayItems) + 1;
 
 //A class to control the page, starts off initializing the page and displaying it
 //has helper functions to manupulate the page
@@ -25,7 +25,6 @@ class PageController {
    #studentListHTML = null;
    //empty student array
    #studentList = [];
-
    //keep track of the last clicked button
    #lastClickedButton = null; 
 
@@ -37,6 +36,37 @@ class PageController {
       this.#studentListHTML = document.querySelector('.student-list');
       //locally store the list in data.js
       this.#studentList = data;
+
+      //GOING FOR EXCEEDS
+      const labelElement = document.createElement("LABEL");
+      labelElement.setAttribute("for", "search");
+      labelElement.className = "student-search";
+
+      const inputElement = document.createElement("INPUT");
+      inputElement.setAttribute("id", "search");
+      inputElement.setAttribute("placeholder", "Search by name...");
+
+      const searchButton = document.createElement("BUTTON");
+      const searchBtnImg = document.createElement("IMG");
+      searchBtnImg.setAttribute("src", "img/icn-search.svg");
+      searchBtnImg.setAttribute("alt", "Search icon");
+      searchButton.appendChild(searchBtnImg);
+
+      //click handler
+      labelElement.onclick = (eventObject) => {
+         this.#SearchButtonElementEventHandler(eventObject, this);
+      }
+
+      //key up handler
+      labelElement.onkeyup  = () => {
+         this.processNameSearch();
+      }
+
+      labelElement.appendChild(inputElement);
+      labelElement.appendChild(searchButton);
+
+      document.querySelector("h2").appendChild(labelElement);
+      //END EXCEEDS
 
    }
 
@@ -51,6 +81,33 @@ class PageController {
    }
    getLastClickedButtonIndex() {
       return parseInt(this.#lastClickedButton.textContent);
+   }
+
+   //helper function to create new elements
+   #createNewElement(elementType, className, text, attribute, attributeValue, parentElement) {
+      if(elementType != null) {
+         let element = document.createElement(elementType);
+
+         if(className != null) {
+            element.className = className;
+         }
+
+         if(text != null) {
+            element.textContent = text;
+         }
+
+         if(attribute != null && attributeValue != null) {
+            element.setAttribute(attribute, attributeValue);
+         }
+
+         if(parentElement != null && typeof(parentElement) === 'object') {
+            parentElement.appendChild(element);
+         }
+
+         return element;
+      }
+
+      return null;
    }
 
    //private function to build HTML list items
@@ -69,46 +126,26 @@ class PageController {
                   // create the elements needed to display the student information
 
                   //the outer list element item
-                  let studentItem = document.createElement("LI");
-                  studentItem.className = "student-item cf";
+                  let studentItem = this.#createNewElement('LI', "student-item cf", null, null, null, null);
 
                   //the div element
-                  let divElement = document.createElement("DIV");
-                  divElement.className = "student-details";
+                  let divElement = this.#createNewElement('DIV', "student-details", null, null, null, studentItem);
 
                   //the avatar image element
-                  let imgElement = document.createElement("IMG");
-                  imgElement.className = "avatar";
-
-                  //the image itself and set attribute
                   const image = list[index].picture.large;
-                  imgElement.setAttribute("src", `${image}`);
+                  let imgElement = this.#createNewElement('IMG', "avatar", null, "src", `${image}`, divElement);
 
                   //the H3 element and context set
-                  let h3Element = document.createElement("H3");
-                  h3Element.textContent = `${list[index].name.first}  ${list[index].name.last}`;
+                  let h3Element = this.#createNewElement('H3', null, `${list[index].name.first}  ${list[index].name.last}`, divElement);
 
                   //the span element and context set
-                  let spanElement = document.createElement("SPAN");
-                  spanElement.className = "email";
-                  spanElement.textContent = `${list[index].email}`;
+                  let spanElement = this.#createNewElement('SPAN', "email", `${list[index].email}`, null, null, divElement);
+                 
+                  let divJoinElement = this.#createNewElement('DIV', "joined-details", null, null,null, studentItem);
 
-                  let divJoinElement = document.createElement("DIV");
-                  divJoinElement.className = "joined-details";
+                  let spanDateElement = this.#createNewElement('SPAN', "date", `Joined: ${list[index].registered.date}`, null, null, divJoinElement);
 
-                  let spanDateElement = document.createElement("SPAN");
-                  spanDateElement.className = "date";
-                  spanDateElement.textContent = `Joined: ${list[index].registered.date}`;
-
-                  // insert the above elements
-                  divElement.appendChild(imgElement);
-                  divElement.appendChild(h3Element);
-                  divElement.appendChild(spanElement);
-                  studentItem.appendChild(divElement);
-                  
-                  divJoinElement.appendChild(spanDateElement);
-                  studentItem.appendChild(divJoinElement);
-
+                  //insert above elements into the HTML
                   this.#studentListHTML.appendChild(studentItem);
                }
             }
@@ -119,11 +156,98 @@ class PageController {
       return false;
    }
 
-   /*
+   //private search method for searching for names from the search box
+   //called from SearchButtonKeyUpHandler and SearchButtonElementEventHandler
+   #searchFor(searchName) {
+      if(typeof(searchName) === "string" && searchName.length > 0) {
+         //declare new array
+         var newList = [];
+         //track how many were found
+         let foundCount = 0;
+
+         for(var index = 0; index < this.#studentList.length; index++) {
+            //get the last name string from the index in list, force the name to lowercase for easy searching
+            let name = this.#studentList[index].name.last.toLowerCase();
+            
+            //check if the name includes the user text
+            if(name.includes(searchName)) {
+               newList[foundCount] = this.#studentList[index];
+               foundCount++;
+            }
+         }
+
+         if(foundCount > 0) {
+            return newList;
+         }
+      }
+
+      return null;
+   }
+
+   processNameSearch() {
+      const textField = document.getElementById("search");
+         
+      if(textField != null) {
+         const userText = textField.value.toLowerCase();
+         
+         //lets make sure we have a valid string
+         if(userText.length > 0) {
+            //declare new array
+            var newList = this.#searchFor(userText);
+            
+            //finally, show the new list
+            if(newList != null) {
+               this.showPage(newList, 1, true);
+            }
+
+         }
+         else{
+            this.showPage(this.#studentList, 1, true);
+            alert("No Names found!");
+         }
+      }
+      else {
+         alert("invalid text field!");
+      }
+   }
+
+
+   #SearchButtonElementEventHandler(eventObject, self) {
+      if(eventObject != null && eventObject.target != null) {
+         let selectedItem = eventObject.target;
+         //sometimes it comes up as the img being clicked so lets respond to that as well, otherwise the user has to click outside the img to hit the button.
+         if(selectedItem.nodeName === "IMG" || selectedItem.nodeName === "BUTTON") {
+            self.processNameSearch();
+         }
+      }
+   }
+
+   #ListItemEventHandler(eventObject, self) {
+      // if the click target is a button:
+      if(eventObject.target.nodeName === "BUTTON") {
+         // remove the "active" class from the previous button
+         if(self.isLastClickedButtonValid()) {
+            self.setLastClickedButtonClassName('');
+         }
+
+         // add the active class to the clicked button
+         self.setLastClickedButtonObject(eventObject.target);
+         self.setLastClickedButtonClassName("active");
+
+         // call the showPage function passing the `list` parameter and page to display as arguments
+         const page = self.getLastClickedButtonIndex();
+         self.showPage(null, page, false);
+      }
+   }
+
+      /*
    Create the `showPage` function
    This function will create and insert/append the elements needed to display a "page" of nine students
+   @Param list: the list of data we are showing on the page
+   @Param page: the current page we are show, if items are greater than 9
+   @Param filtering: boolean flagged if we are searching
    */
-   showPage(list, page) {
+  showPage(list, page, filtering) {
 
       //lets make sure we get valid data before processing
       if(page > 0 && page <= maxPage) {
@@ -144,69 +268,15 @@ class PageController {
             if(this.#paginationOnce == false) {
                this.#addPagination(this.#studentList);
             }
+            else if(filtering) {
+               this.#addPagination(newList);
+            }
          } else {
             alert("Failed to create list items.");
          }
       }
    }
 
-   #LabelElementEventHandler(eventObject, self) {
-      if(eventObject.target.nodeName === "BUTTON") {
-         const textField = document.getElementById("search");
-         
-         if(textField != null) {
-            const userText = textField.value.toLowerCase();
-            
-            //lets make sure we have a valid string
-            if(userText.length > 0) {
-               //declare new array
-               var newList= [];
-               //track how many were found
-               let foundCount = 0;
-
-               for(var index = 0; index < self.#studentList.length; index++) {
-                  //get the last name string from the index in list, force the name to lowercase for easy searching
-                  let name = self.#studentList[index].name.last.toLowerCase();
-                  
-                  //check if the name includes the user text
-                  if(name.includes(userText)) {
-                     newList[foundCount] = self.#studentList[index];
-                     foundCount++;
-                  }
-               }
-               //finally, show the new list
-               if(foundCount > 0) {
-                  self.showPage(newList, 1);
-               }
-
-            }
-            else{
-               alert("No Names found!");
-            }
-         }
-         else {
-            alert("invalid text field!")
-         }
-      }
-   }
-
-   #ListItemEventHandler(eventObject, self) {
-      // if the click target is a button:
-      if(eventObject.target.nodeName === "BUTTON") {
-         // remove the "active" class from the previous button
-         if(self.isLastClickedButtonValid()) {
-            self.setLastClickedButtonClassName('');
-         }
-
-         // add the active class to the clicked button
-         self.setLastClickedButtonObject(eventObject.target);
-         self.setLastClickedButtonClassName("active");
-
-         // call the showPage function passing the `list` parameter and page to display as arguments
-         const page = self.getLastClickedButtonIndex();
-         self.showPage(page);
-      }
-   }
    /*
    Create the `addPagination` function
    This function will create and insert/append the elements needed for the pagination buttons
@@ -215,32 +285,6 @@ class PageController {
 
       //lets make sure the list is valid before processing it
       if(list != null) {
-
-         //GOING FOR EXCEEDS
-         const labelElement = document.createElement("LABEL");
-         labelElement.setAttribute("for", "search");
-         labelElement.className = "student-search";
-
-         const inputElement = document.createElement("INPUT");
-         inputElement.setAttribute("id", "search");
-         inputElement.setAttribute("placeholder", "Search by name...");
-
-         const searchButton = document.createElement("BUTTON");
-         const searchBtnImg = document.createElement("IMG");
-         searchBtnImg.setAttribute("src", "img/icn-search.svg");
-         searchBtnImg.setAttribute("alt", "Search icon");
-         searchButton.appendChild(searchBtnImg);
-
-         labelElement.onclick = (eventObject) => {
-            this.#LabelElementEventHandler(eventObject, this);
-         }
-
-         labelElement.appendChild(inputElement);
-         labelElement.appendChild(searchButton);
-
-         document.querySelector("h2").appendChild(labelElement);
-         //END EXCEEDS
-
 
          // create a variable to calculate the number of pages needed
          const numOfPages = Math.ceil(list.length / maxDisplayItems);
