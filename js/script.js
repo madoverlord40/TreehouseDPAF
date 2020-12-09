@@ -70,15 +70,22 @@ class PageController {
 
    }
 
+   ///GETTERS AND SETTERS
+   ///Because we have private properties that cant be directly accessed in the event handlers
+
+   //getter, is the last clicked button valid
    isLastClickedButtonValid() {
       return (this.#lastClickedButton != null);
    }
+   //setter, set the last clicked button class name
    setLastClickedButtonClassName(className) {
       this.#lastClickedButton.className = className;
    }
+   //setter set last click button object itself
    setLastClickedButtonObject(buttonObject) {
       this.#lastClickedButton = buttonObject;
    }
+   //getter, get the text value from the button, for parsing what page was clicked
    getLastClickedButtonIndex() {
       return parseInt(this.#lastClickedButton.textContent);
    }
@@ -184,6 +191,7 @@ class PageController {
       return null;
    }
 
+   //function to process the name search box, made public for testing
    processNameSearch() {
       const textField = document.getElementById("search");
          
@@ -203,15 +211,18 @@ class PageController {
          }
          else{
             this.showPage(this.#studentList, 1, true);
-            alert("No Names found!");
+            console.log("No Names found!");
          }
       }
       else {
-         alert("invalid text field!");
+         console.log("invalid text field!");
       }
    }
 
 
+   //Event handler for the search button
+   //@Param eventObject, the event object passed down from the framework
+   //@Param self, the this pointer passed down from the handler so we can access methods from the class
    #SearchButtonElementEventHandler(eventObject, self) {
       if(eventObject != null && eventObject.target != null) {
          let selectedItem = eventObject.target;
@@ -222,6 +233,9 @@ class PageController {
       }
    }
 
+   //event handler for clicking on the page buttons at the bottom of the web page
+   //@Param eventObject, the event object passed down from the framework
+   //@Param self, the this pointer passed down from the handler so we can access methods from the class
    #ListItemEventHandler(eventObject, self) {
       // if the click target is a button:
       if(eventObject.target.nodeName === "BUTTON") {
@@ -272,7 +286,7 @@ class PageController {
                this.#addPagination(newList);
             }
          } else {
-            alert("Failed to create list items.");
+            console.log("Failed to create list items.");
          }
       }
    }
@@ -323,7 +337,7 @@ class PageController {
          }
 
       } else {
-         alert("Pagination failed: the list parameter is null!");
+         console.log("Pagination failed: the list parameter is null!");
       }
    }
 }
